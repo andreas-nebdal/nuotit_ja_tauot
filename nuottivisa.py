@@ -1,22 +1,27 @@
 import streamlit as st
 import random
-from PIL import Image
 
 st.set_page_config(page_title="Nuotti- ja taukovisa", layout="centered")
 
 # -----------------------------------------
-# DATA: Kuva- ja nimilistat
+# DATA
 # -----------------------------------------
-ITEMS = [
+NOTES = [
     ("Kokonuotti (1)", "kokonuotti.jpg", 4),
     ("Puolinuotti (1/2)", "puolinuotti.jpg", 2),
     ("Neljäsosanuotti (1/4)", "neljasosanuotti.jpg", 1),
     ("Kahdeksasosanuotti (1/8)", "kahdeksasosanuotti.jpg", 0.5),
+]
+
+RESTS = [
     ("Kokotauko (1)", "kokotauko.jpg", 4),
     ("Puolitauko (1/2)", "puolitauko.jpg", 2),
     ("Neljäsosatauko (1/4)", "neljasosatauko.jpg", 1),
     ("Kahdeksasosatauko (1/8)", "kahdeksasosatauko.jpg", 0.5),
 ]
+
+DURATION_CHOICES = [0.5, 1, 2, 4]
+TOTAL_QUESTIONS = 10
 
 # -----------------------------------------
 # SESSION STATE INIT
@@ -29,15 +34,28 @@ if "score" not in st.session_state:
     st.session_state.score = 0
 if "current_question" not in st.session_state:
     st.session_state.current_question = None
+if "mode" not in st.session_state:
+    st.session_state.mode = None  # "notes" or "rests"
 
 # -----------------------------------------
 # Start new game
 # -----------------------------------------
-def start_game():
+def start_game(mode):
     st.session_state.playing = True
     st.session_state.question_index = 0
     st.session_state.score = 0
     st.session_state.current_question = None
+    st.session_state.mode = mode
+
+# -----------------------------------------
+# Sidebar: progress
+# -----------------------------------------
+if st.session_state.playing:
+    st.sidebar.title("📊 Edistyminen")
+    progress = st.session_state.question_index / TOTAL_QUESTIONS
+    st.sidebar.progress(progress)
+    st.sidebar.write(f"Kysymys: {st.session_state.question_index}/{TOTAL_QUESTIONS}")
+    st.sidebar.write(f"Pisteet: {st.session_state.score}")
 
 # -----------------------------------------
 # Start screen
@@ -45,72 +63,72 @@ def start_game():
 if not st.session_state.playing:
     st.title("🎵 Nuotti- ja taukovisa")
     st.image("images/alku.jpg", width=350)
-    st.write("Harjoittele nuottien ja taukojen nimiä sekä aika-arvoja.")
-    if st.button("Aloita peli"):
-        start_game()
+    st.write("Valitse mitä haluat harjoitella:")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Nuotit"):
+            start_game("notes")
+    with col2:
+        if st.button("Tauot"):
+            start_game("rests")
     st.stop()
 
 # -----------------------------------------
 # End screen
 # -----------------------------------------
-if st.session_state.question_index >= 10:
+if st.session_state.question_index >= TOTAL_QUESTIONS:
     st.title("Peli päättyi!")
-    st.subheader(f"Pisteet: {st.session_state.score} / 10")
+    st.subheader(f"Pisteet: {st.session_state.score} / {TOTAL_QUESTIONS}")
     if st.button("Pelaa uudelleen"):
-        start_game()
+        st.session_state.playing = False
     st.stop()
+
+# -----------------------------------------
+# Valitaan oikea lista
+# -----------------------------------------
+ITEMS = NOTES if st.session_state.mode == "notes" else RESTS
 
 # -----------------------------------------
 # Generate question
 # -----------------------------------------
-QTYPE = random.choice([1, 2, 3, 4])
+QTYPE = random.choice([1, 2, 3])  # 1=kuva→nimi, 2=kuva→aika-arvo, 3=nimi→aika-arvo
 correct_item = random.choice(ITEMS)
 name, filename, duration = correct_item
-wrong_choices = random.sample([i for i in ITEMS if i != correct_item], 3)
-choices = [correct_item] + wrong_choices
-random.shuffle(choices)
 st.session_state.current_question = (correct_item, QTYPE)
 
-st.write(f"**Kysymys {st.session_state.question_index + 1} / 10**")
+st.write(f"**Kysymys {st.session_state.question_index + 1} / {TOTAL_QUESTIONS}**")
 
 # -----------------------------------------
 # Display question
 # -----------------------------------------
 if QTYPE == 1:
-    st.subheader(f"Valitse kuva: **{name}**")
-elif QTYPE == 2:
     st.subheader("Mikä on tämän kuvan nimi?")
     st.image(f"images/{filename}", width=200)
-elif QTYPE == 3:
-    st.subheader("Mikä on tämän nuotin/tauon aika-arvo?")
+
+elif QTYPE == 2:
+    st.subheader("Mikä on tämän kuvan aika-arvo?")
     st.image(f"images/{filename}", width=200)
-    st.write("(Vastaa numeroa: 4, 2, 1 tai 0.5)")
-elif QTYPE == 4:
-    st.subheader(f"Valitse kuva aika-arvolle **{duration}**")
+    st.write("Valitse yksi: 0.5, 1, 2, 4")
+
+elif QTYPE == 3:
+    st.subheader(f"Mikä on aika-arvo nimelle **{name}**?")
+    st.write("Valitse yksi: 0.5, 1, 2, 4")
 
 # -----------------------------------------
 # Answer form
 # -----------------------------------------
 with st.form("answer_form"):
     user_choice = None
-    cols = st.columns(4)
 
-    if QTYPE in [1, 4]:
-        # Näytä kuvat + valintapainikkeet
-        for i, (n, f, d) in enumerate(choices):
-            with cols[i % 4]:
-                st.image(f"images/{f}", width=160)
-                if st.form_submit_button(n, key=f):
-                    user_choice = f
-
-    elif QTYPE == 2:
-        choice = st.radio("Valitse oikea nimi:", [c[0] for c in choices])
+    if QTYPE == 1:
+        choice = st.radio("Valitse nimi:", [i[0] for i in ITEMS])
         submitted = st.form_submit_button("Vastaa")
         if submitted:
             user_choice = choice
 
-    elif QTYPE == 3:
-        choice = st.radio("Valitse aika-arvo:", [c[2] for c in choices])
+    elif QTYPE in [2, 3]:
+        choice = st.radio("Valitse aika-arvo:", DURATION_CHOICES)
         submitted = st.form_submit_button("Vastaa")
         if submitted:
             user_choice = choice
@@ -118,21 +136,20 @@ with st.form("answer_form"):
 # -----------------------------------------
 # Check answer
 # -----------------------------------------
-if user_choice:
+if user_choice is not None:
     correct, qtype = st.session_state.current_question
     correct_name, correct_file, correct_duration = correct
 
-    if qtype in [1, 4]:
-        user_item = [i for i in ITEMS if i[1] == user_choice][0]
-    elif qtype == 2:
-        user_item = [i for i in ITEMS if i[0] == user_choice][0]
-    elif qtype == 3:
-        user_item = [i for i in ITEMS if i[2] == user_choice][0]
+    if qtype == 1:
+        is_correct = (user_choice == correct_name)
+    else:  # QTYPE 2 or 3
+        is_correct = (float(user_choice) == correct_duration)
 
-    if user_item == correct:
+    if is_correct:
         st.session_state.score += 1
         st.success("Oikein!")
     else:
-        st.error("Väärin.")
+        st.error(f"Väärin. Oikea vastaus: {correct_duration if qtype != 1 else correct_name}")
 
     st.session_state.question_index += 1
+    st.rerun()
