@@ -7,17 +7,17 @@ st.set_page_config(page_title="Nuotti- ja taukovisa", layout="centered")
 # DATA
 # -----------------------------------------
 NOTES = [
-    ("Kokonuotti (1)", "kokonuotti.jpg", 4),
-    ("Puolinuotti (1/2)", "puolinuotti.jpg", 2),
-    ("Neljäsosanuotti (1/4)", "neljasosanuotti.jpg", 1),
-    ("Kahdeksasosanuotti (1/8)", "kahdeksasosanuotti.jpg", 0.5),
+    ("Kokonuotti", "kokonuotti.jpg", 4),
+    ("Puolinuotti", "puolinuotti.jpg", 2),
+    ("Neljäsosanuotti", "neljasosanuotti.jpg", 1),
+    ("Kahdeksasosanuotti", "kahdeksasosanuotti.jpg", 0.5),
 ]
 
 RESTS = [
-    ("Kokotauko (1)", "kokotauko.jpg", 4),
-    ("Puolitauko (1/2)", "puolitauko.jpg", 2),
-    ("Neljäsosatauko (1/4)", "neljasosatauko.jpg", 1),
-    ("Kahdeksasosatauko (1/8)", "kahdeksasosatauko.jpg", 0.5),
+    ("Kokotauko", "kokotauko.jpg", 4),
+    ("Puolitauko", "puolitauko.jpg", 2),
+    ("Neljäsosatauko", "neljasosatauko.jpg", 1),
+    ("Kahdeksasosatauko", "kahdeksasosatauko.jpg", 0.5),
 ]
 
 DURATION_CHOICES = [0.5, 1, 2, 4]
@@ -32,10 +32,10 @@ if "question_index" not in st.session_state:
     st.session_state.question_index = 0
 if "score" not in st.session_state:
     st.session_state.score = 0
-if "current_question" not in st.session_state:
-    st.session_state.current_question = None
+if "questions" not in st.session_state:
+    st.session_state.questions = []
 if "mode" not in st.session_state:
-    st.session_state.mode = None  # "notes" or "rests"
+    st.session_state.mode = None
 
 # -----------------------------------------
 # Start new game
@@ -44,11 +44,21 @@ def start_game(mode):
     st.session_state.playing = True
     st.session_state.question_index = 0
     st.session_state.score = 0
-    st.session_state.current_question = None
     st.session_state.mode = mode
 
+    ITEMS = NOTES if mode == "notes" else RESTS
+
+    # Luo kaikki mahdolliset parit (item, tyyppi)
+    all_pairs = []
+    for item in ITEMS:
+        for qtype in [1, 2, 3]:  # 1=kuva→nimi, 2=kuva→aika-arvo, 3=nimi→aika-arvo
+            all_pairs.append((item, qtype))
+
+    # Arvo 10 uniikkia paria
+    st.session_state.questions = random.sample(all_pairs, TOTAL_QUESTIONS)
+
 # -----------------------------------------
-# Sidebar: progress
+# Sidebar progress
 # -----------------------------------------
 if st.session_state.playing:
     st.sidebar.title("📊 Edistyminen")
@@ -85,17 +95,11 @@ if st.session_state.question_index >= TOTAL_QUESTIONS:
     st.stop()
 
 # -----------------------------------------
-# Valitaan oikea lista
+# Current question
 # -----------------------------------------
-ITEMS = NOTES if st.session_state.mode == "notes" else RESTS
-
-# -----------------------------------------
-# Generate question
-# -----------------------------------------
-QTYPE = random.choice([1, 2, 3])  # 1=kuva→nimi, 2=kuva→aika-arvo, 3=nimi→aika-arvo
-correct_item = random.choice(ITEMS)
+current_question = st.session_state.questions[st.session_state.question_index]
+(correct_item, QTYPE) = current_question
 name, filename, duration = correct_item
-st.session_state.current_question = (correct_item, QTYPE)
 
 st.write(f"**Kysymys {st.session_state.question_index + 1} / {TOTAL_QUESTIONS}**")
 
@@ -119,37 +123,27 @@ elif QTYPE == 3:
 # Answer form
 # -----------------------------------------
 with st.form("answer_form"):
-    user_choice = None
-
     if QTYPE == 1:
-        choice = st.radio("Valitse nimi:", [i[0] for i in ITEMS])
-        submitted = st.form_submit_button("Vastaa")
-        if submitted:
-            user_choice = choice
-
-    elif QTYPE in [2, 3]:
+        choice = st.radio("Valitse nimi:", [i[0] for i in (NOTES if st.session_state.mode == "notes" else RESTS)])
+    else:
         choice = st.radio("Valitse aika-arvo:", DURATION_CHOICES)
-        submitted = st.form_submit_button("Vastaa")
-        if submitted:
-            user_choice = choice
+
+    submitted = st.form_submit_button("Vastaa")
 
 # -----------------------------------------
 # Check answer
 # -----------------------------------------
-if user_choice is not None:
-    correct, qtype = st.session_state.current_question
-    correct_name, correct_file, correct_duration = correct
-
-    if qtype == 1:
-        is_correct = (user_choice == correct_name)
-    else:  # QTYPE 2 or 3
-        is_correct = (float(user_choice) == correct_duration)
+if submitted:
+    if QTYPE == 1:
+        is_correct = (choice == name)
+    else:
+        is_correct = (float(choice) == duration)
 
     if is_correct:
         st.session_state.score += 1
         st.success("Oikein!")
     else:
-        st.error(f"Väärin. Oikea vastaus: {correct_duration if qtype != 1 else correct_name}")
+        st.error(f"Väärin. Oikea vastaus: {name if QTYPE == 1 else duration}")
 
     st.session_state.question_index += 1
     st.rerun()
