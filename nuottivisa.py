@@ -12,11 +12,11 @@ st.set_page_config(page_title="Nuotti- ja taukovisa", layout="centered")
 def clickable_image(image_path, key):
     img = Image.open(image_path)
     buffer = BytesIO()
-    img.save(buffer, format="PNG")
+    img.save(buffer, format="jpg")
     img_b64 = base64.b64encode(buffer.getvalue()).decode()
     html = f"""
         <button style="border:none; background:none;" type="submit" name="choice" value="{key}">
-            <img src="data:image/png;base64,{img_b64}" width="160">
+            <img src="data:image/jpg;base64,{img_b64}" width="160">
         </button>
     """
     return html
@@ -28,16 +28,16 @@ def clickable_image(image_path, key):
 # Nimet ja vastaavat kuvat
 ITEMS = [
     # nuotit
-    ("Kokonuotti (1)", "kokonuotti.png", 4),
-    ("Puolinuotti (1/2)", "puolinuotti.png", 2),
-    ("Neljäsosanuotti (1/4)", "neljasosanuotti.png", 1),
-    ("Kahdeksasnuotti (1/8)", "kahdeksasnuotti.png", 0.5),
+    ("Kokonuotti (1)", "kokonuotti.jpg", 4),
+    ("Puolinuotti (1/2)", "puolinuotti.jpg", 2),
+    ("Neljäsosanuotti (1/4)", "neljasosanuotti.jpg", 1),
+    ("Kahdeksasosanuotti (1/8)", "kahdeksasosanuotti.jpg", 0.5),
 
     # tauot
-    ("Kokolepo (1)", "koko_lepo.png", 4),
-    ("Puolilepo (1/2)", "puoli_lepo.png", 2),
-    ("Neljäsosaleppo (1/4)", "neljasosa_lepo.png", 1),
-    ("Kahdeksasosaleppo (1/8)", "kahdeksas_lepo.png", 0.5),
+    ("Kokotauko (1)", "kokotauko.jpg", 4),
+    ("Puolitauko (1/2)", "puolitauko.jpg", 2),
+    ("Neljäsosatauko (1/4)", "neljasosatauko.jpg", 1),
+    ("Kahdeksasosatauko (1/8)", "kahdeksasosatauko.jpg", 0.5),
 ]
 
 # -----------------------------------------
