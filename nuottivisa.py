@@ -4,6 +4,27 @@ import random
 st.set_page_config(page_title="Nuotti- ja taukovisa", layout="centered")
 
 # -----------------------------------------
+# CSS tyylit animaatiolle ja aloitusnäkymälle
+# -----------------------------------------
+st.markdown(
+    """
+    <style>
+    @keyframes flash {
+        0% {opacity: 1;}
+        50% {opacity: 0.5;}
+        100% {opacity: 1;}
+    }
+    .flash {
+        animation: flash 0.8s ease-in-out 3;
+    }
+    .title {text-align:center; font-size: 2.5em; font-weight:bold; color:#333;}
+    .subtitle {text-align:center; font-size:1.2em; color:#666;}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# -----------------------------------------
 # DATA
 # -----------------------------------------
 NOTES = [
@@ -36,6 +57,8 @@ if "questions" not in st.session_state:
     st.session_state.questions = []
 if "mode" not in st.session_state:
     st.session_state.mode = None
+if "feedback" not in st.session_state:
+    st.session_state.feedback = None  # Tallentaa palauteviestin
 
 # -----------------------------------------
 # Start new game
@@ -45,6 +68,7 @@ def start_game(mode):
     st.session_state.question_index = 0
     st.session_state.score = 0
     st.session_state.mode = mode
+    st.session_state.feedback = None
 
     ITEMS = NOTES if mode == "notes" else RESTS
 
@@ -67,21 +91,23 @@ if st.session_state.playing:
     st.sidebar.write(f"Kysymys: {st.session_state.question_index}/{TOTAL_QUESTIONS}")
     st.sidebar.write(f"Pisteet: {st.session_state.score}")
 
+    # Näytä palaute sivupalkissa
+    if st.session_state.feedback:
+        color = "#d4edda" if st.session_state.feedback["correct"] else "#f8d7da"
+        emoji = "🎉" if st.session_state.feedback["correct"] else "❌"
+        st.sidebar.markdown(
+            f"""
+            <div class="flash" style="background-color:{color}; padding:10px; border-radius:8px; text-align:center; font-size:18px;">
+            {emoji} {st.session_state.feedback["message"]}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
 # -----------------------------------------
 # Start screen
 # -----------------------------------------
 if not st.session_state.playing:
-    st.markdown(
-        """
-        <style>
-        .main {background-color: #f9f9f9;}
-        .title {text-align:center; font-size: 2.5em; font-weight:bold; color:#333;}
-        .subtitle {text-align:center; font-size:1.2em; color:#666;}
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
     st.markdown('<p class="title">🎵 Nuotti- ja taukovisa</p>', unsafe_allow_html=True)
     st.markdown('<p class="subtitle">Harjoittele nuottien ja taukojen nimiä sekä aika-arvoja hauskalla tavalla!</p>', unsafe_allow_html=True)
 
@@ -158,9 +184,14 @@ if submitted:
     if is_correct:
         st.session_state.score += 1
         st.success("🎉 Oikein!")
-        st.balloons()  # pieni animaatio
+        st.balloons()
+        st.session_state.feedback = {"correct": True, "message": "Oikein!"}
     else:
         st.error(f"❌ Väärin! Oikea vastaus: {name if QTYPE == 1 else duration}")
+        st.session_state.feedback = {"correct": False, "message": "Väärin!"}
 
-    st.session_state.question_index += 1
-    st.rerun()
+    # Näytä painike seuraavaan kysymykseen
+    if st.button("➡ Seuraava kysymys"):
+        st.session_state.question_index += 1
+        st.session_state.feedback = None
+        st.rerun()
