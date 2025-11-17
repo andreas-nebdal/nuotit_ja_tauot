@@ -71,24 +71,40 @@ if st.session_state.playing:
 # Start screen
 # -----------------------------------------
 if not st.session_state.playing:
-    st.title("🎵 Nuotti- ja taukovisa")
-    st.image("images/alku.jpg", width=350)
-    st.write("Valitse mitä haluat harjoitella:")
+    st.markdown(
+        """
+        <style>
+        .main {background-color: #f9f9f9;}
+        .title {text-align:center; font-size: 2.5em; font-weight:bold; color:#333;}
+        .subtitle {text-align:center; font-size:1.2em; color:#666;}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
+    st.markdown('<p class="title">🎵 Nuotti- ja taukovisa</p>', unsafe_allow_html=True)
+    st.markdown('<p class="subtitle">Harjoittele nuottien ja taukojen nimiä sekä aika-arvoja hauskalla tavalla!</p>', unsafe_allow_html=True)
+
+    st.write("Valitse mitä haluat harjoitella:")
     col1, col2 = st.columns(2)
+
     with col1:
-        if st.button("Nuotit"):
+        st.image("images/nuotit.jpg", width=200)
+        if st.button("Harjoittele nuotteja"):
             start_game("notes")
+
     with col2:
-        if st.button("Tauot"):
+        st.image("images/tauot.jpg", width=200)
+        if st.button("Harjoittele taukoja"):
             start_game("rests")
+
     st.stop()
 
 # -----------------------------------------
 # End screen
 # -----------------------------------------
 if st.session_state.question_index >= TOTAL_QUESTIONS:
-    st.title("Peli päättyi!")
+    st.title("✅ Peli päättyi!")
     st.subheader(f"Pisteet: {st.session_state.score} / {TOTAL_QUESTIONS}")
     if st.button("Pelaa uudelleen"):
         st.session_state.playing = False
@@ -141,9 +157,10 @@ if submitted:
 
     if is_correct:
         st.session_state.score += 1
-        st.success("Oikein!")
+        st.success("🎉 Oikein!")
+        st.balloons()  # pieni animaatio
     else:
-        st.error(f"Väärin. Oikea vastaus: {name if QTYPE == 1 else duration}")
+        st.error(f"❌ Väärin! Oikea vastaus: {name if QTYPE == 1 else duration}")
 
     st.session_state.question_index += 1
     st.rerun()
