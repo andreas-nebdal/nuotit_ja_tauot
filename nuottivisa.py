@@ -74,17 +74,22 @@ if st.session_state.playing:
 # Start screen
 # -----------------------------------------
 if not st.session_state.playing:
-    st.title("🎵 Nuotti- ja taukovisa")
-    st.write("Harjoittele nuottien ja taukojen nimiä sekä aika-arvoja hauskalla tavalla!")
-    st.write("Valitse mitä haluat harjoitella:")
+    st.markdown('<p class="title">🎵 Nuotti- ja taukovisa</p>', unsafe_allow_html=True)
+    st.markdown('<p class="subtitle">Harjoittele nuottien ja taukojen nimiä sekä aika-arvoja hauskalla tavalla!</p>', unsafe_allow_html=True)
 
+    st.write("Valitse mitä haluat harjoitella:")
     col1, col2 = st.columns(2)
+
     with col1:
-        if st.button("Nuotit"):
+        st.image("images/nuotit.jpg", width=200)
+        if st.button("Harjoittele nuotteja"):
             start_game("notes")
+
     with col2:
-        if st.button("Tauot"):
+        st.image("images/tauot.jpg", width=200)
+        if st.button("Harjoittele taukoja"):
             start_game("rests")
+
     st.stop()
 
 # -----------------------------------------
@@ -128,16 +133,16 @@ st.write(f"**Kysymys {st.session_state.question_index + 1} / {TOTAL_QUESTIONS}**
 # Display question
 # -----------------------------------------
 if QTYPE == 1:
-    st.subheader("Mikä on tämän kuvan nimi?")
+    st.subheader("Mikä on tämän nuotin/tauon nimi?")
     st.image(f"images/{filename}", width=200)
 
 elif QTYPE == 2:
-    st.subheader("Mikä on tämän kuvan aika-arvo?")
+    st.subheader("Mikä on tämän nuotin/tauon aika-arvo?")
     st.image(f"images/{filename}", width=200)
     st.write("Valitse yksi: 0.5, 1, 2, 4")
 
 elif QTYPE == 3:
-    st.subheader(f"Mikä on aika-arvo nimelle **{name}**?")
+    st.subheader(f"Mikä on aika-arvo nuotilla/tauolla nimeltään **{name}**?")
     st.write("Valitse yksi: 0.5, 1, 2, 4")
 
 # -----------------------------------------
